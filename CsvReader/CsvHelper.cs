@@ -1,4 +1,5 @@
 ﻿using CsvReader.Attributes;
+using CsvReader.Enums;
 using CsvReader.Exceptions;
 using CsvReader.Extensions;
 using System;
@@ -22,10 +23,6 @@ namespace CsvReader
 
             var headers = lines[0].SplitString().ToList();
 
-            if (headers.Count != propertyInfo.Count())
-            {
-                throw new CsvReaderException("The number of the columns don't match with number of the properties. Try selecting partial mode");
-            }
 
             Dictionary<string, int> indexList = CreateMatch(propertyInfo, headers);
 
@@ -47,9 +44,44 @@ namespace CsvReader
             }
         }
 
+        public static IEnumerable<T> ImportCsv<T>(string filePath, CsvReadOptions options)
+        {
+            var lines = File.ReadAllLines(filePath);
+            if (lines == null || lines.Length == 0)
+                throw new CsvReaderException("File is empty.");
+
+            var propertyInfo = typeof(T).GetProperties();
+
+            var headers = lines[0].SplitString().ToList();
+
+            Dictionary<string, int> indexList = CreateMatch(propertyInfo, headers, options);
+
+            for (int i = 1; i < lines.Length; i++)
+            {
+                var csvProp = lines[i].SplitString().ToList();
+                var item = Activator.CreateInstance<T>();
+
+                foreach (var prop in propertyInfo)
+                {
+                    var type = prop.PropertyType;
+                    var index = indexList[prop.Name];
+
+                    if (index >= 0)
+                    {
+                        var valueOfItem = csvProp[index];
+
+                        var value = Convert.ChangeType(valueOfItem, type);
+                        prop.SetValue(item, value, null);
+                    }
+                }
+                yield return item;
+            }
+        }
+
         private static Dictionary<string, int> CreateMatch(
             PropertyInfo[] propertyInfo, 
-            List<string> headers)
+            List<string> headers,
+            CsvReadOptions options=CsvReadOptions.Full)
         {
             try
             {
@@ -59,6 +91,10 @@ namespace CsvReader
                     var columnsName = prop.GetColumnNameOrNull();
 
                     var index = headers.IndexOf(columnsName??prop.Name);
+
+                    if(options==CsvReadOptions.Full && index==-1)
+                        throw new CsvReaderException("The number of the columns don't match with number of the properties. Try selecting partial mode");
+
                     result[prop.Name] = index;
                 }
                 return result;
@@ -87,7 +123,6 @@ namespace CsvReader
             fileText.Append(lineBuilder.ToString());
             fileText.Append(Environment.NewLine);
             lineBuilder.Clear();
-
 
             foreach (var item in items)
             {
