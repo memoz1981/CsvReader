@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 
 namespace CsvReader
 {
@@ -69,6 +70,42 @@ namespace CsvReader
             
         }
 
+        public static void ExportCsv<T>(List<T> items, StreamWriter sw)
+        {
+            var fileText = new StringBuilder(); 
+            var lineBuilder = new StringBuilder(); 
+            var properties=typeof(T).GetProperties();
+
+            for (int i = 0; i < properties.Length; i++)
+            {
+                lineBuilder.Append(properties[i].GetColumnNameOrNull() ?? properties[i].Name);
+                if(i<properties.Length-1)
+                    lineBuilder.Append(',');
+            }
+            
+            fileText.Append(lineBuilder.ToString());
+            fileText.Append(Environment.NewLine);
+            lineBuilder.Clear();
+
+
+            foreach (var item in items)
+            {
+                for (int i = 0; i < properties.Length; i++)
+                {
+                    var value = properties[i].GetValue(item, null).ToString();
+                    lineBuilder.Append(value);
+                    if(i<properties.Length-1)
+                        lineBuilder.Append(',');
+                }
+                
+                fileText.Append(lineBuilder);
+                fileText.Append(Environment.NewLine);
+                lineBuilder.Clear();
+            }
+
+            //var file=File.Create(filePath);
+            sw.Write(fileText.ToString());
+        }
 
     }
 }
