@@ -69,5 +69,18 @@ namespace CsvReader.Extensions
             yield return builder.ToString();
         }
 
+        public static string QuoteStringWithComma(this string text)
+        {
+            var builder= new StringBuilder();
+            if(text.IndexOf(',')>0)
+            {
+                builder.Append('"');
+                builder.Append(text);
+                builder.Append('"');
+                return builder.ToString();
+            }
+            return text;
+        }
+
     }
 }

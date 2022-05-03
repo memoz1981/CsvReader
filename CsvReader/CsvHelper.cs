@@ -78,7 +78,8 @@ namespace CsvReader
 
             for (int i = 0; i < properties.Length; i++)
             {
-                lineBuilder.Append(properties[i].GetColumnNameOrNull() ?? properties[i].Name);
+                var name = (properties[i].GetColumnNameOrNull() ?? properties[i].Name).QuoteStringWithComma();
+                lineBuilder.Append(name);
                 if(i<properties.Length-1)
                     lineBuilder.Append(',');
             }
@@ -92,7 +93,7 @@ namespace CsvReader
             {
                 for (int i = 0; i < properties.Length; i++)
                 {
-                    var value = properties[i].GetValue(item, null).ToString();
+                    var value = properties[i].GetValue(item, null).ToString().QuoteStringWithComma();
                     lineBuilder.Append(value);
                     if(i<properties.Length-1)
                         lineBuilder.Append(',');
